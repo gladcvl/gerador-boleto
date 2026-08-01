@@ -22,7 +22,7 @@ jobs:
         with:
           version: 11.1.1
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22.x
           cache: pnpm
@@ -40,7 +40,7 @@ jobs:
         with:
           version: 11.1.1
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22.x
           cache: pnpm
@@ -58,7 +58,7 @@ jobs:
         with:
           version: 11.1.1
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22.x
           cache: pnpm
@@ -78,7 +78,7 @@ jobs:
         with:
           version: 11.1.1
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22.x
           registry-url: https://registry.npmjs.org
