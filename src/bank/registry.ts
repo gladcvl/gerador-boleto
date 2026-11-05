@@ -23,8 +23,3 @@ export function getBank(id: unknown): BankModule | undefined {
   }
   return banks[id as BankId];
 }
-
-/** Resolve pelo código de compensação ('237', '104', ...). */
-export function getBankIdByCodigo(codigo: string): BankId | undefined {
-  return BANK_IDS.find((id) => banks[id].options.codigo === codigo);
-}
