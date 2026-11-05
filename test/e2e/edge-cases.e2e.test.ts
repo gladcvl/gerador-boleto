@@ -323,16 +323,19 @@ describe('E2E › Edge Cases & Cenários Transversais', () => {
             ? BRADESCO_COMPLETO.input
             : banco === 'santander'
               ? SANTANDER_COMPLETO.input
-              : {
-                  banco: banco as BankId,
-                  dataEmissao: '2026-05-10T00:00:00.000Z',
-                  dataVencimento: '2026-05-17T00:00:00.000Z',
-                  valorDocumento: 10000,
-                  nossoNumero: '12345678',
-                  agencia: '1234',
-                  codigoCedente: banco === 'caixa' ? '123456' : '12345',
-                  carteira: banco === 'caixa' ? '1' : '109',
-                };
+              : banco !== 'caixa' && banco !== 'itau'
+                ? // bancos novos: usa um boleto completo gerado como input fixo
+                  gerarBoleto({ banco, dataEmissao: '2026-05-10', dataVencimento: '2026-05-17' })
+                : {
+                    banco: banco as BankId,
+                    dataEmissao: '2026-05-10T00:00:00.000Z',
+                    dataVencimento: '2026-05-17T00:00:00.000Z',
+                    valorDocumento: 10000,
+                    nossoNumero: '12345678',
+                    agencia: '1234',
+                    codigoCedente: banco === 'caixa' ? '123456' : '12345',
+                    carteira: banco === 'caixa' ? '1' : '109',
+                  };
 
         const out1 = gerarBoleto(input);
         const out2 = gerarBoleto(input);

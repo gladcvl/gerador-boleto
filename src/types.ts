@@ -1,5 +1,13 @@
 /** IDs dos bancos com implementação emissor disponível */
-export type BankId = 'bradesco' | 'santander' | 'caixa' | 'itau';
+export type BankId =
+  | 'bradesco'
+  | 'santander'
+  | 'caixa'
+  | 'itau'
+  | 'bb'
+  | 'sicredi'
+  | 'sicoob'
+  | 'safra';
 
 export interface Endereco {
   logradouro?: string;
@@ -63,6 +71,14 @@ export interface BoletoInputBase {
 
   /** Caixa: identificador de emissão (padrão '4' = beneficiário) */
   identificadorEmissao?: string;
+  /** Banco do Brasil: número do convênio (4, 6 ou 7 dígitos) */
+  convenio?: number | string;
+  /** Sicredi: posto da cooperativa (2 dígitos) */
+  posto?: number | string;
+  /** Sicoob: modalidade de cobrança (padrão '01') */
+  modalidade?: string;
+  /** Sicoob: número da parcela (padrão '001') */
+  parcela?: string;
 
   /** @deprecated use `beneficiario.nome` */
   cedente?: string;
@@ -113,6 +129,8 @@ export interface BoletoJsonOutput {
 
 export interface BankOptions {
   codigo: string;
+  /** DV oficial do código do banco (ex.: '2' em 237-2; Sicredi usa 'X') */
+  digito: string;
   /** Nome para impressão no boleto */
   nome: string;
 }

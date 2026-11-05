@@ -34,6 +34,10 @@ const boletos = [
   criarBoleto({ ...comum, banco: 'itau', agencia: '3907', codigoCedente: '69608', carteira: '109', nossoNumero: '30672934' }),
   criarBoleto({ ...comum, banco: 'santander', agencia: '3978', codigoCedente: '6404154', carteira: '101', nossoNumero: '1234567' }),
   criarBoleto({ ...comum, banco: 'caixa', agencia: '1234', codigoCedente: '654321', carteira: '14', nossoNumero: '1001' }),
+  criarBoleto({ ...comum, banco: 'bb', agencia: '1234', agenciaDv: '3', codigoCedente: '12345', contaDv: '6', convenio: '1234567', carteira: '17', nossoNumero: '500' }),
+  criarBoleto({ ...comum, banco: 'sicredi', agencia: '0710', posto: '03', codigoCedente: '12345', nossoNumero: '26200700' }),
+  criarBoleto({ ...comum, banco: 'sicoob', agencia: '4321', codigoCedente: '1234567', nossoNumero: '600' }),
+  criarBoleto({ ...comum, banco: 'safra', agencia: '00400', codigoCedente: '005801234', nossoNumero: '700' }),
 ];
 
 mkdirSync(new URL('./saida/', import.meta.url), { recursive: true });

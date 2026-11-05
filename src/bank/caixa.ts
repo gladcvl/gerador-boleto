@@ -104,7 +104,7 @@ function campos(boleto: BoletoRuntime) {
 }
 
 export const caixa: BankModule = {
-  options: { codigo: '104', nome: 'Caixa Econômica Federal' },
+  options: { codigo: '104', digito: '0', nome: 'Caixa Econômica Federal' },
 
   codBarras(boleto: BoletoRuntime): string {
     const c = campos(boleto);

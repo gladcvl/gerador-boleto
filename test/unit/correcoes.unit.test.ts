@@ -145,7 +145,16 @@ describe('Correções › Campos nunca são truncados silenciosamente', () => {
 });
 
 describe('Correções › Geração aleatória sempre produz dados coerentes', () => {
-  for (const banco of ['bradesco', 'caixa', 'itau', 'santander'] as const) {
+  for (const banco of [
+    'bradesco',
+    'caixa',
+    'itau',
+    'santander',
+    'bb',
+    'sicredi',
+    'sicoob',
+    'safra',
+  ] as const) {
     it(`${banco}: 500 boletos aleatórios válidos e sem truncamento`, () => {
       for (let i = 0; i < 500; i++) {
         const b = gerarBoleto({ banco });
@@ -154,7 +163,7 @@ describe('Correções › Geração aleatória sempre produz dados coerentes', (
           String(b.linhaDigitavel),
         );
         assert.ok(r.barrasValido && r.linhaValida && r.consistente, JSON.stringify(b));
-        assert.ok(Number.isSafeInteger(b.nossoNumero));
+        assert.ok(Number.isSafeInteger(b.nossoNumero) || /^\d+$/.test(String(b.nossoNumero)));
         // regerar a partir do próprio output tem de dar o mesmo código (nada foi truncado)
         assert.equal(criarBoleto(b as any).codigoBarras, b.codigoBarras);
       }
@@ -230,6 +239,37 @@ describe('Correções › DV do nosso número por banco', () => {
     });
     const cb = santander.codBarras(b);
     assert.equal(santander.nossoNumeroFormatado(b), `000001234567-${cb[39]}`);
+  });
+});
+
+describe('Correções › Carteira padrão do banco', () => {
+  it('Sicredi/Sicoob/Caixa sem carteira usam a carteira 1 (não 0) no código de barras', () => {
+    const venc = { dataVencimento: '20/11/2026', valorDocumento: 100 };
+    const sicredi = criarBoleto({
+      ...venc,
+      banco: 'sicredi',
+      agencia: '0710',
+      posto: '03',
+      codigoCedente: '12345',
+      nossoNumero: '26200700',
+    } as any);
+    assert.equal(sicredi.codigoBarras[20], '1', 'Sicredi: posição 21 = carteira');
+    assert.equal(sicredi.carteira, '1');
+    const sicoob = criarBoleto({
+      ...venc,
+      banco: 'sicoob',
+      agencia: '4321',
+      codigoCedente: '1234567',
+      nossoNumero: '600',
+    } as any);
+    assert.equal(sicoob.codigoBarras[19], '1', 'Sicoob: posição 20 = carteira');
+    const caixa = criarBoleto({
+      ...venc,
+      banco: 'caixa',
+      codigoCedente: '654321',
+      nossoNumero: '1',
+    } as any);
+    assert.equal(caixa.nossoNumeroFormatado.slice(0, 2), '14');
   });
 });
 

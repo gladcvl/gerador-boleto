@@ -35,7 +35,7 @@ export function dvNossoNumeroBradesco(carteira: string, nossoNumero: string): nu
 }
 
 export const bradesco: BankModule = {
-  options: { codigo: '237', nome: 'Banco Bradesco S.A.' },
+  options: { codigo: '237', digito: '2', nome: 'Banco Bradesco S.A.' },
 
   codBarras(boleto: BoletoRuntime): string {
     const { agencia, carteira, nossoNumero, conta } = campos(boleto);

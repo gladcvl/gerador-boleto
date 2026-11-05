@@ -240,7 +240,16 @@ export const PAYLOAD_STDIN = {
 
 // ─── Bancos disponíveis (para iteração em testes) ────────
 
-export const BANCOS_DISPONIVEIS = ['bradesco', 'santander', 'caixa', 'itau'] as const;
+export const BANCOS_DISPONIVEIS = [
+  'bradesco',
+  'santander',
+  'caixa',
+  'itau',
+  'bb',
+  'sicredi',
+  'sicoob',
+  'safra',
+] as const;
 
 // ─── Códigos bancários esperados ─────────────────────────
 
@@ -249,4 +258,8 @@ export const CODIGOS_BANCO: Record<string, string> = {
   santander: '033-7',
   caixa: '104-0',
   itau: '341-7',
+  bb: '001-9',
+  sicredi: '748-X',
+  sicoob: '756-0',
+  safra: '422-7',
 };

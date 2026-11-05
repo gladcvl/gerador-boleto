@@ -1,4 +1,3 @@
-import { mod11 } from './algorithm/checksum.js';
 import { getBank } from './bank/registry.js';
 import type { BankModule, BoletoRuntime } from './types.js';
 import { copiaSegura } from './util/sanitize.js';
@@ -60,8 +59,8 @@ export class Boleto {
 
   private _calculate(): void {
     const runtime = this as unknown as BoletoRuntime;
-    const codigo = this.bank.options.codigo;
-    this.codigoBanco = `${codigo}-${mod11(codigo)}`;
+    const { codigo, digito } = this.bank.options;
+    this.codigoBanco = `${codigo}-${digito}`;
 
     this.codigoBarras = this.bank.codBarras(runtime);
     this.linhaDigitavel = this.bank.linhaDigitavel(this.codigoBarras);

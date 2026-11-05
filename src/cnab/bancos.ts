@@ -36,6 +36,9 @@ export interface BeneficiarioCnab {
   codigoBeneficiario?: string;
   /** Santander: DV da conta cobrança */
   codigoBeneficiarioDv?: string;
+  /** Banco do Brasil: carteira (2) e variação da carteira (3) do convênio */
+  carteira?: string;
+  variacaoCarteira?: string;
 }
 
 export interface Banco240 {
@@ -470,13 +473,235 @@ const caixa: Banco240 = {
   nossoNumeroRetorno: (t) => t.nossoNumero!,
 };
 
-export const BANCOS_240: Record<BankId, Banco240> = { bradesco, itau, santander, caixa };
+// ─── Banco do Brasil ───────────────────────────────────────────────────────
+
+/** Convênio BB no header: convênio(9) + '0014' + carteira(2) + variação(3) + brancos(2) */
+function convenioBb(de: number): ReturnType<typeof num>[] {
+  return [
+    num('convenio', de, de + 8),
+    num('produtoCobranca', de + 9, de + 12, '0014'),
+    num('bbCarteira', de + 13, de + 14),
+    num('bbVariacao', de + 15, de + 17),
+    brancos(de + 18, de + 19),
+  ];
+}
+
+const bbLayout: Layout240 = {
+  ...FEBRABAN_240,
+  headerArquivo: substituir(FEBRABAN_240.headerArquivo, 33, 52, convenioBb(33)),
+  headerLote: substituir(FEBRABAN_240.headerLote, 34, 53, convenioBb(34)),
+};
+
+const bb: Banco240 = {
+  id: 'bb',
+  codigo: '001',
+  nomeArquivo: 'BANCO DO BRASIL S.A.',
+  layout: bbLayout,
+  versaoArquivo: '083',
+  versaoLote: '042',
+  densidade: '00000',
+  especies: ESPECIES_FEBRABAN,
+  padroesP: {
+    carteira: '1',
+    formaCadastramento: '1',
+    tipoDocumento: '1',
+    emissao: '2',
+    distribuicao: '2',
+  },
+  dadosConta(b) {
+    return {
+      convenio: exigir(b.convenio, 'convenio', 'Banco do Brasil'),
+      bbCarteira: exigir(b.carteira, 'carteira', 'Banco do Brasil'),
+      bbVariacao: exigir(b.variacaoCarteira, 'variacaoCarteira', 'Banco do Brasil'),
+      agencia: b.agencia,
+      agenciaDv: b.agenciaDv,
+      conta: exigir(b.conta, 'conta', 'Banco do Brasil'),
+      contaDv: b.contaDv,
+    };
+  },
+  dadosTitulo(boleto, b) {
+    // Nosso número como impresso, sem traço (convênio 7: 17 dígitos sem DV)
+    return { ...this.dadosConta(b), nossoNumero: boleto.nossoNumeroFormatado.replace('-', '') };
+  },
+  validarTitulo(boleto, b) {
+    conferir(
+      digitos(boleto.convenio, 'convenio', 9),
+      digitos(exigir(b.convenio, 'convenio', 'Banco do Brasil'), 'convenio', 9),
+      'convênio',
+    );
+  },
+  nossoNumeroRetorno: (t) => t.nossoNumero!.trim(),
+};
+
+// ─── Sicoob ────────────────────────────────────────────────────────────────
+
+/** Identificação do título Sicoob: NN com DV (10) + parcela(2) + modalidade(2) + formulário(1) + brancos(5) */
+const nossoNumeroSicoob = [
+  num('nossoNumero', 38, 47),
+  num('parcela', 48, 49),
+  num('modalidade', 50, 51),
+  num('tipoFormulario', 52, 52, '4'),
+  brancos(53, 57),
+];
+
+const sicoobLayout: Layout240 = {
+  ...FEBRABAN_240,
+  headerArquivo: substituir(FEBRABAN_240.headerArquivo, 33, 52, [brancos(33, 52)]),
+  headerLote: substituir(FEBRABAN_240.headerLote, 34, 53, [brancos(34, 53)]),
+  segmentoP: substituir(FEBRABAN_240.segmentoP, 38, 57, nossoNumeroSicoob),
+  segmentoT: substituir(FEBRABAN_240.segmentoT, 38, 57, [
+    num('nossoNumero', 38, 47),
+    alfa('identificacaoTitulo', 48, 57),
+  ]),
+};
+
+const sicoob: Banco240 = {
+  id: 'sicoob',
+  codigo: '756',
+  nomeArquivo: 'SICOOB',
+  layout: sicoobLayout,
+  versaoArquivo: '081',
+  versaoLote: '040',
+  densidade: '00000',
+  especies: ESPECIES_FEBRABAN,
+  padroesP: {
+    carteira: '1',
+    formaCadastramento: '0',
+    tipoDocumento: '0',
+    emissao: '2',
+    distribuicao: '2',
+  },
+  dadosConta(b) {
+    return {
+      agencia: b.agencia,
+      agenciaDv: b.agenciaDv,
+      conta: exigir(b.conta, 'conta', 'Sicoob'),
+      contaDv: b.contaDv,
+    };
+  },
+  dadosTitulo(boleto, b) {
+    return {
+      ...this.dadosConta(b),
+      nossoNumero: digitos(boleto.nossoNumero, 'nossoNumero', 7) + String(boleto.nossoNumeroDv),
+      parcela: String(Number(boleto.parcela ?? '1')).padStart(2, '0'),
+      modalidade: String(boleto.modalidade ?? '01'),
+    };
+  },
+  validarTitulo(boleto, b) {
+    conferir(
+      digitos(boleto.agencia, 'agencia', 4),
+      digitos(b.agencia, 'agencia', 4),
+      'cooperativa',
+    );
+    conferir(
+      digitos(boleto.codigoCedente, 'codigoCedente', 7),
+      digitos(
+        exigir(b.codigoBeneficiario, 'codigoBeneficiario', 'Sicoob'),
+        'codigoBeneficiario',
+        7,
+      ),
+      'código do cliente',
+    );
+  },
+  // 10 posições = NN(7) + DV, alinhado à direita
+  nossoNumeroRetorno: (t) => t.nossoNumero!.slice(-8, -1),
+};
+
+// ─── Sicredi ───────────────────────────────────────────────────────────────
+
+const sicrediLayout: Layout240 = {
+  ...FEBRABAN_240,
+  headerArquivo: substituir(FEBRABAN_240.headerArquivo, 33, 52, [
+    num('convenio', 33, 37),
+    brancos(38, 52),
+  ]),
+  headerLote: substituir(FEBRABAN_240.headerLote, 34, 53, [
+    num('convenio', 34, 38),
+    brancos(39, 53),
+  ]),
+  segmentoP: substituir(FEBRABAN_240.segmentoP, 38, 57, [
+    num('nossoNumero', 38, 46),
+    brancos(47, 57),
+  ]),
+  segmentoT: substituir(FEBRABAN_240.segmentoT, 38, 57, [
+    num('nossoNumero', 38, 46),
+    brancos(47, 57),
+  ]),
+};
+
+const sicredi: Banco240 = {
+  id: 'sicredi',
+  codigo: '748',
+  nomeArquivo: 'SICREDI',
+  layout: sicrediLayout,
+  versaoArquivo: '081',
+  versaoLote: '040',
+  densidade: '01600',
+  especies: ESPECIES_FEBRABAN,
+  padroesP: {
+    carteira: '1',
+    formaCadastramento: '1',
+    tipoDocumento: '1',
+    emissao: '2',
+    distribuicao: '2',
+  },
+  dadosConta(b) {
+    return {
+      convenio: exigir(b.codigoBeneficiario, 'codigoBeneficiario', 'Sicredi'),
+      agencia: b.agencia,
+      conta: exigir(b.conta, 'conta', 'Sicredi'),
+      contaDv: b.contaDv,
+    };
+  },
+  dadosTitulo(boleto, b) {
+    return {
+      ...this.dadosConta(b),
+      nossoNumero: digitos(boleto.nossoNumero, 'nossoNumero', 8) + String(boleto.nossoNumeroDv),
+    };
+  },
+  validarTitulo(boleto, b) {
+    conferir(
+      digitos(boleto.agencia, 'agencia', 4),
+      digitos(b.agencia, 'agencia', 4),
+      'cooperativa',
+    );
+    conferir(
+      digitos(boleto.codigoCedente, 'codigoCedente', 5),
+      digitos(
+        exigir(b.codigoBeneficiario, 'codigoBeneficiario', 'Sicredi'),
+        'codigoBeneficiario',
+        5,
+      ),
+      'código do beneficiário',
+    );
+  },
+  nossoNumeroRetorno: (t) => t.nossoNumero!.slice(0, 8),
+};
+
+/** Bancos sem layout CNAB 240 implementado, com o motivo. */
+const SEM_CNAB_240: Partial<Record<BankId, string>> = {
+  safra:
+    'layout CNAB 240 do Safra não implementado (a cobrança Safra costuma usar CNAB 400). Envie o manual do seu convênio para incluirmos.',
+};
+
+export const BANCOS_240: Partial<Record<BankId, Banco240>> = {
+  bradesco,
+  itau,
+  santander,
+  caixa,
+  bb,
+  sicoob,
+  sicredi,
+};
 
 export function banco240(id: unknown): Banco240 {
+  if (typeof id === 'string' && Object.hasOwn(SEM_CNAB_240, id)) {
+    throw new CnabError(`${id}: ${SEM_CNAB_240[id as BankId]}`);
+  }
   if (typeof id !== 'string' || !Object.hasOwn(BANCOS_240, id)) {
     throw new CnabError(`Banco sem layout CNAB 240: ${String(id)}.`);
   }
-  return BANCOS_240[id as BankId];
+  return BANCOS_240[id as BankId]!;
 }
 
 export function banco240PorCodigo(codigo: string): Banco240 {

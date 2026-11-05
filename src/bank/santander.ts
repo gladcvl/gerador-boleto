@@ -13,7 +13,7 @@ function campos(boleto: BoletoRuntime) {
 }
 
 export const santander: BankModule = {
-  options: { codigo: '033', nome: 'Banco Santander (Brasil) S.A.' },
+  options: { codigo: '033', digito: '7', nome: 'Banco Santander (Brasil) S.A.' },
 
   codBarras(boleto: BoletoRuntime): string {
     const c = campos(boleto);

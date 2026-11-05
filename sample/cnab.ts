@@ -24,7 +24,26 @@ const pagadores = [
   },
 ];
 
-const contas: Record<BankId, { beneficiario: BeneficiarioCnab; boleto: Partial<BoletoInput>; nn: (i: number) => string }> = {
+// Safra não tem layout CNAB 240 implementado (ver README)
+const contas: Record<
+  Exclude<BankId, 'safra'>,
+  { beneficiario: BeneficiarioCnab; boleto: Partial<BoletoInput>; nn: (i: number) => string }
+> = {
+  bb: {
+    beneficiario: { ...empresa, agencia: '1234', agenciaDv: '3', conta: '12345', contaDv: '6', convenio: '1234567', carteira: '17', variacaoCarteira: '019' },
+    boleto: { agencia: '1234', codigoCedente: '12345', convenio: '1234567', carteira: '17' },
+    nn: (i) => String(500 + i),
+  },
+  sicoob: {
+    beneficiario: { ...empresa, agencia: '4321', agenciaDv: '0', conta: '98765', contaDv: '1', codigoBeneficiario: '1234567' },
+    boleto: { agencia: '4321', codigoCedente: '1234567' },
+    nn: (i) => String(600 + i),
+  },
+  sicredi: {
+    beneficiario: { ...empresa, agencia: '0710', conta: '12345', contaDv: '0', codigoBeneficiario: '12345' },
+    boleto: { agencia: '0710', posto: '03', codigoCedente: '12345' },
+    nn: (i) => `262${String(700 + i).padStart(5, '0')}`,
+  },
   bradesco: {
     beneficiario: { ...empresa, agencia: '1229', agenciaDv: '1', conta: '0000469', contaDv: '6', convenio: '1234567' },
     boleto: { agencia: '1229', codigoCedente: '0000469', carteira: '09' },
@@ -48,7 +67,7 @@ const contas: Record<BankId, { beneficiario: BeneficiarioCnab; boleto: Partial<B
 };
 
 mkdirSync(new URL('./saida/', import.meta.url), { recursive: true });
-for (const [banco, c] of Object.entries(contas) as [BankId, (typeof contas)[BankId]][]) {
+for (const [banco, c] of Object.entries(contas) as [Exclude<BankId, "safra">, (typeof contas)["bb"]][]) {
   const titulos = pagadores.map((pagador, i) => ({
     boleto: criarBoleto({
       ...c.boleto,

@@ -29,40 +29,83 @@ const PAGADOR = {
 };
 const EMPRESA = { nome: 'Empresa Exemplo LTDA', documento: '11.222.333/0001-81' };
 
-const CONTAS: Record<BankId, { beneficiario: BeneficiarioCnab; boleto: Partial<BoletoInput> }> = {
-  bradesco: {
-    beneficiario: {
-      ...EMPRESA,
-      agencia: '1229',
-      agenciaDv: '1',
-      conta: '469',
-      contaDv: '6',
-      convenio: '1234567',
-    },
-    boleto: { agencia: '1229', codigoCedente: '0000469', carteira: '09', nossoNumero: '100' },
-  },
-  itau: {
-    beneficiario: { ...EMPRESA, agencia: '3907', conta: '69608', contaDv: '6' },
-    boleto: { agencia: '3907', codigoCedente: '69608', carteira: '109', nossoNumero: '200' },
-  },
-  santander: {
-    beneficiario: {
-      ...EMPRESA,
-      agencia: '3978',
-      conta: '13000123',
-      contaDv: '4',
-      convenio: '397800006404154',
-      codigoBeneficiario: '6404154',
-    },
-    boleto: { agencia: '3978', codigoCedente: '6404154', carteira: '101', nossoNumero: '300' },
-  },
-  caixa: {
-    beneficiario: { ...EMPRESA, agencia: '1234', agenciaDv: '5', codigoBeneficiario: '654321' },
-    boleto: { agencia: '1234', codigoCedente: '654321', carteira: '14', nossoNumero: '400' },
-  },
-};
+type BancoCnab = Exclude<BankId, 'safra'>;
 
-function boleto(banco: BankId, extra: Partial<BoletoInput> = {}) {
+const CONTAS: Record<BancoCnab, { beneficiario: BeneficiarioCnab; boleto: Partial<BoletoInput> }> =
+  {
+    bradesco: {
+      beneficiario: {
+        ...EMPRESA,
+        agencia: '1229',
+        agenciaDv: '1',
+        conta: '469',
+        contaDv: '6',
+        convenio: '1234567',
+      },
+      boleto: { agencia: '1229', codigoCedente: '0000469', carteira: '09', nossoNumero: '100' },
+    },
+    itau: {
+      beneficiario: { ...EMPRESA, agencia: '3907', conta: '69608', contaDv: '6' },
+      boleto: { agencia: '3907', codigoCedente: '69608', carteira: '109', nossoNumero: '200' },
+    },
+    santander: {
+      beneficiario: {
+        ...EMPRESA,
+        agencia: '3978',
+        conta: '13000123',
+        contaDv: '4',
+        convenio: '397800006404154',
+        codigoBeneficiario: '6404154',
+      },
+      boleto: { agencia: '3978', codigoCedente: '6404154', carteira: '101', nossoNumero: '300' },
+    },
+    caixa: {
+      beneficiario: { ...EMPRESA, agencia: '1234', agenciaDv: '5', codigoBeneficiario: '654321' },
+      boleto: { agencia: '1234', codigoCedente: '654321', carteira: '14', nossoNumero: '400' },
+    },
+    bb: {
+      beneficiario: {
+        ...EMPRESA,
+        agencia: '1234',
+        agenciaDv: '3',
+        conta: '12345',
+        contaDv: '6',
+        convenio: '1234567',
+        carteira: '17',
+        variacaoCarteira: '019',
+      },
+      boleto: {
+        agencia: '1234',
+        codigoCedente: '12345',
+        convenio: '1234567',
+        carteira: '17',
+        nossoNumero: '500',
+      },
+    },
+    sicoob: {
+      beneficiario: {
+        ...EMPRESA,
+        agencia: '4321',
+        agenciaDv: '0',
+        conta: '98765',
+        contaDv: '1',
+        codigoBeneficiario: '1234567',
+      },
+      boleto: { agencia: '4321', codigoCedente: '1234567', nossoNumero: '600' },
+    },
+    sicredi: {
+      beneficiario: {
+        ...EMPRESA,
+        agencia: '0710',
+        conta: '12345',
+        contaDv: '0',
+        codigoBeneficiario: '12345',
+      },
+      boleto: { agencia: '0710', posto: '03', codigoCedente: '12345', nossoNumero: '26200700' },
+    },
+  };
+
+function boleto(banco: BancoCnab, extra: Partial<BoletoInput> = {}) {
   return criarBoleto({
     ...CONTAS[banco].boleto,
     banco,
@@ -75,7 +118,7 @@ function boleto(banco: BankId, extra: Partial<BoletoInput> = {}) {
   } as BoletoInput);
 }
 
-function remessa(banco: BankId, titulos?: TituloRemessa[], extra = {}) {
+function remessa(banco: BancoCnab, titulos?: TituloRemessa[], extra = {}) {
   return gerarRemessaCnab240({
     banco,
     sequencial: 7,
@@ -88,19 +131,20 @@ function remessa(banco: BankId, titulos?: TituloRemessa[], extra = {}) {
   });
 }
 
-const BANCOS: BankId[] = ['bradesco', 'itau', 'santander', 'caixa'];
+const BANCOS: BancoCnab[] = ['bradesco', 'itau', 'santander', 'caixa', 'bb', 'sicoob', 'sicredi'];
+const layoutDe = (banco: BancoCnab) => BANCOS_240[banco]!;
 
 describe('CNAB › Motor de layout', () => {
   for (const banco of BANCOS) {
     it(`${banco}: todos os registros cobrem 1..240 sem lacunas/sobreposição`, () => {
-      for (const [nome, layout] of Object.entries(BANCOS_240[banco].layout)) {
+      for (const [nome, layout] of Object.entries(layoutDe(banco).layout)) {
         assert.doesNotThrow(() => validarLayout(layout, `${banco}.${nome}`));
       }
     });
   }
 
   it('detecta lacuna, sobreposição e substituição que corta campo', () => {
-    const base = BANCOS_240.bradesco.layout.trailerArquivo;
+    const base = layoutDe('bradesco').layout.trailerArquivo;
     assert.throws(() => validarLayout(base.slice(1), 'x'), /posição 1 não coberta/);
     assert.throws(() => validarLayout(base.slice(0, -1), 'x'), /termina na posição 29/);
     assert.throws(() => substituir(base, 20, 25, []), /corta o campo/);
@@ -116,7 +160,7 @@ describe('CNAB › Remessa (estrutura comum)', () => {
       for (const l of linhas) {
         assert.equal(l.length, 240);
         assert.match(l, /^[\x20-\x7E]+$/, 'somente ASCII imprimível');
-        assert.equal(pos(l, 1, 3), BANCOS_240[banco].codigo);
+        assert.equal(pos(l, 1, 3), layoutDe(banco).codigo);
       }
       assert.deepEqual(
         linhas.map((l) => pos(l, 8, 8) + (pos(l, 8, 8) === '3' ? pos(l, 14, 14) : '')),
@@ -273,6 +317,41 @@ describe('CNAB › Remessa (instruções de cobrança)', () => {
     assert.throws(
       () => linhasDe({}, { pagador: { ...PAGADOR, documento: '123' } }),
       /CPF\/CNPJ inválido/,
+    );
+  });
+});
+
+describe('CNAB › Bancos novos (BB, Sicoob, Sicredi) e Safra', () => {
+  it('BB: convênio/carteira/variação no header e nosso número de 17 posições', () => {
+    const [h, l, p] = remessa('bb').split('\r\n') as [string, string, string];
+    assert.equal(pos(h, 33, 52), '001234567001417019  ');
+    assert.equal(pos(l, 34, 53), '001234567001417019  ');
+    assert.equal(pos(p, 38, 57), '12345670000000500   ');
+  });
+
+  it('Sicoob: nosso número com DV, parcela, modalidade e formulário', () => {
+    const [, , p] = remessa('sicoob').split('\r\n') as [string, string, string];
+    const b = boleto('sicoob');
+    assert.equal(pos(p, 38, 52), `000000600${b.nossoNumeroDv}01014`);
+    assert.equal(pos(p, 53, 57), '     ');
+  });
+
+  it('Sicredi: código do beneficiário no header e nosso número 8+DV', () => {
+    const [h, , p] = remessa('sicredi').split('\r\n') as [string, string, string];
+    assert.equal(pos(h, 33, 37), '12345');
+    assert.equal(pos(p, 38, 46), `26200700${boleto('sicredi').nossoNumeroDv}`);
+  });
+
+  it('Safra: erro explícito em vez de layout inventado', () => {
+    assert.throws(
+      () =>
+        gerarRemessaCnab240({
+          banco: 'safra',
+          sequencial: 1,
+          beneficiario: EMPRESA as any,
+          titulos: [],
+        }),
+      /safra: layout CNAB 240 do Safra não implementado/,
     );
   });
 });

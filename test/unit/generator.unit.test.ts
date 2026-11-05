@@ -28,7 +28,11 @@ describe('Unit › Generator', () => {
 
     it('deve escolher um banco aleatório válido se não for fornecido', () => {
       const output = gerarBoleto();
-      assert.ok(['bradesco', 'santander', 'caixa', 'itau'].includes(String(output.banco)));
+      assert.ok(
+        ['bradesco', 'santander', 'caixa', 'itau', 'bb', 'sicredi', 'sicoob', 'safra'].includes(
+          String(output.banco),
+        ),
+      );
     });
 
     it('deve gerar datas válidas quando omitidas', () => {

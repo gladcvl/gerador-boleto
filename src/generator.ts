@@ -12,18 +12,49 @@ function normalizarBanco(banco: unknown): BankId | undefined {
   if (banco == null) {
     return undefined;
   }
-  const id = String(banco).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+  const texto = String(banco).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+  const id = ALIASES.get(texto.replace(/[\s._-]+/g, '')) ?? texto;
   if (!getBank(id)) {
     throw new Error('Banco inválido.');
   }
   return id as BankId;
 }
 
+/** Nomes alternativos aceitos em `banco` (sem acento/espaço, minúsculos). */
+const ALIASES = new Map<string, BankId>([
+  ['bancodobrasil', 'bb'],
+  ['bancobrasil', 'bb'],
+  ['001', 'bb'],
+  ['237', 'bradesco'],
+  ['033', 'santander'],
+  ['104', 'caixa'],
+  ['caixaeconomicafederal', 'caixa'],
+  ['cef', 'caixa'],
+  ['341', 'itau'],
+  ['itauunibanco', 'itau'],
+  ['748', 'sicredi'],
+  ['756', 'sicoob'],
+  ['bancoob', 'sicoob'],
+  ['422', 'safra'],
+]);
+
+/** Carteira usada quando o banco tem um padrão e ela não foi informada. */
+const CARTEIRA_PADRAO: Partial<Record<BankId, string>> = {
+  caixa: '1',
+  sicredi: '1',
+  sicoob: '1',
+  safra: '1',
+};
+
 const NOMES_BANCO: Record<BankId, string> = {
   bradesco: 'Bradesco',
   santander: 'Santander',
   caixa: 'Caixa',
   itau: 'Itaú',
+  bb: 'do Brasil',
+  sicredi: 'Sicredi',
+  sicoob: 'Sicoob',
+  safra: 'Safra',
 };
 
 /**
@@ -53,7 +84,7 @@ function prepararInput(input: Partial<BoletoInput>): BoletoRuntime {
     nossoNumero: seguro.nossoNumero ?? 0,
     agencia: seguro.agencia ?? 0,
     codigoCedente: seguro.codigoCedente ?? 0,
-    carteira: seguro.carteira ?? 0,
+    carteira: seguro.carteira ?? CARTEIRA_PADRAO[banco] ?? 0,
     localPagamento:
       seguro.localPagamento || `Até o vencimento, preferencialmente no Banco ${NOMES_BANCO[banco]}`,
     instrucoesPagamento:
@@ -84,6 +115,11 @@ const OBRIGATORIOS: Record<BankId, (keyof BoletoInput)[]> = {
   itau: ['agencia', 'codigoCedente', 'carteira', 'nossoNumero', 'valorDocumento', 'dataVencimento'],
   santander: ['codigoCedente', 'carteira', 'nossoNumero', 'valorDocumento', 'dataVencimento'],
   caixa: ['codigoCedente', 'nossoNumero', 'valorDocumento', 'dataVencimento'],
+  // BB: agência/conta são exigidas pelo módulo só para convênios de 4 e 6 posições
+  bb: ['convenio', 'carteira', 'nossoNumero', 'valorDocumento', 'dataVencimento'],
+  sicredi: ['agencia', 'posto', 'codigoCedente', 'nossoNumero', 'valorDocumento', 'dataVencimento'],
+  sicoob: ['agencia', 'codigoCedente', 'nossoNumero', 'valorDocumento', 'dataVencimento'],
+  safra: ['agencia', 'codigoCedente', 'nossoNumero', 'valorDocumento', 'dataVencimento'],
 };
 
 /**
@@ -119,18 +155,43 @@ const CARTEIRAS_POR_BANCO: Record<BankId, string[]> = {
   caixa: ['14', '24'],
   santander: ['101', '102', '201', '104'],
   itau: ['104', '109', '112', '175'],
+  bb: ['17', '18'],
+  sicredi: ['1'],
+  sicoob: ['1'],
+  safra: ['1'],
 };
 
 /** Quantidade de dígitos de cada campo por banco (para gerar massa válida). */
-const DIGITOS: Record<BankId, { nossoNumero: number; codigoCedente: number }> = {
-  bradesco: { nossoNumero: 11, codigoCedente: 7 },
-  caixa: { nossoNumero: 15, codigoCedente: 6 },
-  santander: { nossoNumero: 12, codigoCedente: 7 },
-  itau: { nossoNumero: 8, codigoCedente: 5 },
+const DIGITOS: Record<BankId, { nossoNumero: number; codigoCedente: number; agencia: number }> = {
+  bradesco: { nossoNumero: 11, codigoCedente: 7, agencia: 4 },
+  caixa: { nossoNumero: 15, codigoCedente: 6, agencia: 4 },
+  santander: { nossoNumero: 12, codigoCedente: 7, agencia: 4 },
+  itau: { nossoNumero: 8, codigoCedente: 5, agencia: 4 },
+  bb: { nossoNumero: 10, codigoCedente: 8, agencia: 4 },
+  sicredi: { nossoNumero: 8, codigoCedente: 5, agencia: 4 },
+  sicoob: { nossoNumero: 7, codigoCedente: 7, agencia: 4 },
+  safra: { nossoNumero: 8, codigoCedente: 9, agencia: 5 },
 };
 
 function numeroAleatorio(digitos: number): number {
   return randomInt(10 ** (digitos - 1), 10 ** digitos - 1);
+}
+
+/** Campos extras que alguns bancos exigem, para gerar massa válida. */
+function extrasAleatorios(banco: BankId): Partial<BoletoInput> {
+  if (banco === 'bb') {
+    return { convenio: numeroAleatorio(7) };
+  }
+  if (banco === 'sicredi') {
+    // ano(2) + byte de geração (2 a 9) + sequencial(5)
+    const ano = String(utcToday().getUTCFullYear()).slice(2);
+    const sequencial = String(randomInt(1, 99_999)).padStart(5, '0');
+    return {
+      posto: String(randomInt(1, 99)).padStart(2, '0'),
+      nossoNumero: `${ano}${randomInt(2, 9)}${sequencial}`,
+    };
+  }
+  return {};
 }
 
 /**
@@ -146,9 +207,10 @@ export function gerarBoletoAleatorio(input?: Partial<BoletoInput>): BoletoJsonOu
   const defaults: Partial<BoletoInput> = {
     valorDocumento: randomInt(1, 99_999),
     nossoNumero: numeroAleatorio(DIGITOS[banco].nossoNumero),
-    agencia: randomInt(1, 9_999),
+    agencia: randomInt(1, 10 ** DIGITOS[banco].agencia - 1),
     codigoCedente: numeroAleatorio(DIGITOS[banco].codigoCedente),
     carteira: carteiras[Math.floor(Math.random() * carteiras.length)]!,
+    ...extrasAleatorios(banco),
   };
 
   const merged: Partial<BoletoInput> = { ...defaults };

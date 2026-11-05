@@ -37,7 +37,7 @@ function dacNossoNumero(c: ReturnType<typeof campos>): number {
 }
 
 export const itau: BankModule = {
-  options: { codigo: '341', nome: 'Itaú Unibanco S.A.' },
+  options: { codigo: '341', digito: '7', nome: 'Itaú Unibanco S.A.' },
 
   codBarras(boleto: BoletoRuntime): string {
     const c = campos(boleto);
