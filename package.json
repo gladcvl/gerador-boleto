@@ -59,25 +59,25 @@
     "test:unit": "node --import tsx --test test/unit/**/*.test.ts",
     "test:e2e": "node --import tsx --test test/e2e/**/*.test.ts",
     "test:watch": "node --import tsx --test --watch test/**/*.test.ts",
-    "sample:vazio": "node example/test-vazio.mjs",
-    "sample:bancos": "node example/test-bancos.mjs",
-    "sample:bradesco": "node example/test-bradesco.mjs",
-    "sample:caixa": "node example/test-caixa.mjs",
-    "sample:itau": "node example/test-itau.mjs",
-    "sample:santander": "node example/test-santander.mjs",
-    "sample:stdin": "node example/stdin-json.mjs < example/payload.json"
+    "sample:vazio": "node sample/test-vazio.mjs",
+    "sample:bancos": "node sample/test-bancos.mjs",
+    "sample:bradesco": "node sample/test-bradesco.mjs",
+    "sample:caixa": "node sample/test-caixa.mjs",
+    "sample:itau": "node sample/test-itau.mjs",
+    "sample:santander": "node sample/test-santander.mjs",
+    "sample:stdin": "node sample/stdin-json.mjs < sample/payload.json"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
-    "tsup": "^8.5.1",
+    "@types/node": "^22.13.1",
+    "tsup": "^9.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.7.3",
-    "@types/node": "^22.13.1"
+    "typescript": "^5.7.3"
   },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "^11.1.1",
+      "version": "^11.28.9",
       "onFail": "download"
     }
   }

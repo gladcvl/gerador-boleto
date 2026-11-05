@@ -1,6 +1,6 @@
 /**
  * JSON → JSON via stdin.
- * Uso: pnpm build && node examples/stdin-json.mjs < entrada.json
+ * Uso: pnpm build && node sample/stdin-json.mjs < entrada.json
  */
 import { gerarBoleto } from '../dist/index.js';
 

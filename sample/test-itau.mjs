@@ -1,5 +1,5 @@
 /**
- * Uso: pnpm build && node examples/test-santander.mjs
+ * Uso: pnpm build && node sample/test-santander.mjs
  */
 import { gerarBoleto } from '../dist/index.js';
 
