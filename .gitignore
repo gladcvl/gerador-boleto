@@ -6,3 +6,4 @@ coverage
 pnpm-debug.log*
 .npmrc.local
 .env
+sample/saida

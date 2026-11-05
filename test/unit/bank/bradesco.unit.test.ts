@@ -64,12 +64,11 @@ describe('Unit › Bank › Bradesco', () => {
     assert.equal(a, b);
   });
 
-  it('deve usar strings vazias para campos nulos/undefined', () => {
+  it('deve rejeitar campos obrigatórios ausentes em vez de usar zeros', () => {
     const b = makeBoleto();
     b.agencia = undefined as any;
     b.carteira = undefined as any;
     b.codigoCedente = undefined as any;
-    const result = bradesco.codBarras(b);
-    assert.equal(result.length, 44);
+    assert.throws(() => bradesco.codBarras(b), /é obrigatório/);
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Uso: pnpm build && node examples/test-caixa.mjs
+ * Uso: pnpm build && node sample/test-caixa.mjs
  */
 import { gerarBoleto } from '../dist/index.js';
 
@@ -13,7 +13,7 @@ console.log(
       dataEmissao: new Date(),
       dataVencimento: vencimento,
       valorDocumento: 88800,
-      nossoNumero: '12345678987654321',
+      nossoNumero: '345678987654321',
       agencia: '1234',
       codigoCedente: '654321',
       carteira: '14',

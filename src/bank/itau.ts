@@ -1,54 +1,70 @@
 import { mod10 } from '../algorithm/checksum.js';
 import { dvBarraModulo11, fatorVencimento, linhaDigitavelPadrao } from '../algorithm/febraban.js';
 import type { BankModule, BoletoRuntime } from '../types.js';
-import { onlyDigits, zeroPad } from '../util/string.js';
+import { BoletoValidationError, digitos } from '../util/validate.js';
+import { inserirDv, valorBarras } from './common.js';
+
+/** Carteiras cujo DAC do nosso número usa apenas carteira + nosso número. */
+const CARTEIRAS_SIMPLES = new Set(['126', '131', '146', '150', '168']);
 
 /**
- * Carteiras que usam apenas CARTEIRA/Nosso Número para cálculo do DAC
+ * Carteiras com campo livre diferente (seu número + código do cliente),
+ * ainda não implementadas. Gerar com o layout padrão produziria boletos inválidos.
  */
-const CARTEIRAS_SIMPLES = [126, 131, 146, 150, 168];
+const CARTEIRAS_LAYOUT_ESPECIAL = new Set(['106', '107', '122', '142', '143', '195', '196', '198']);
+
+function campos(boleto: BoletoRuntime) {
+  const carteira = digitos(boleto.carteira, 'carteira', 3);
+  if (CARTEIRAS_LAYOUT_ESPECIAL.has(carteira)) {
+    throw new BoletoValidationError(
+      'carteira',
+      `a carteira Itaú ${carteira} usa um layout de código de barras especial ainda não suportado.`,
+    );
+  }
+  return {
+    carteira,
+    agencia: digitos(boleto.agencia, 'agencia', 4),
+    conta: digitos(boleto.codigoCedente, 'codigoCedente', 5),
+    nossoNumero: digitos(boleto.nossoNumero, 'nossoNumero', 8),
+  };
+}
+
+function dacNossoNumero(c: ReturnType<typeof campos>): number {
+  const base = CARTEIRAS_SIMPLES.has(c.carteira)
+    ? c.carteira + c.nossoNumero
+    : c.agencia + c.conta + c.carteira + c.nossoNumero;
+  return mod10(base);
+}
 
 export const itau: BankModule = {
-  options: { codigo: '341' },
+  options: { codigo: '341', digito: '7', nome: 'Itaú Unibanco S.A.' },
 
   codBarras(boleto: BoletoRuntime): string {
-    const codigoBanco = itau.options.codigo;
-    const moeda = '9';
-
+    const c = campos(boleto);
     const fator = fatorVencimento(boleto.dataVencimento);
-    const valorDocumento = zeroPad(boleto.valorDocumento, 10);
+    const dacAgenciaConta = mod10(c.agencia + c.conta);
 
-    const carteira = zeroPad(onlyDigits(String(boleto.carteira ?? '')), 3);
-    const carteiraNumero = Number.parseInt(carteira, 10);
-
-    const agencia = zeroPad(onlyDigits(String(boleto.agencia ?? '')), 4);
-    const conta = zeroPad(onlyDigits(String(boleto.codigoCedente ?? '')), 5).slice(-5);
-
-    const nnStr = onlyDigits(String(boleto.nossoNumero));
-    const nn = zeroPad(nnStr, 8);
-
-    let baseNnDv = '';
-    if (CARTEIRAS_SIMPLES.includes(carteiraNumero)) {
-      baseNnDv = carteira + nn;
-    } else {
-      baseNnDv = agencia + conta + carteira + nn;
-    }
-    const nnDv = String(mod10(baseNnDv));
-
-    const dacAgenciaConta = String(mod10(agencia + conta));
-
-    // Campo livre para Itaú (25 dígitos)
-    // Estrutura: CARTEIRA(3) + NN(8) + DV(1) + AGÊNCIA(4) + CONTA(5) + DV(1) + ZEROS(3)
-    // Total: 3 + 8 + 1 + 4 + 5 + 1 + 3 = 25 dígitos
-    const campoLivre = `${carteira}${nn}${nnDv}${agencia}${conta}${dacAgenciaConta}000`;
-
-    const barra = `${codigoBanco}${moeda}${fator}${valorDocumento}${campoLivre}`;
-
-    const dv = dvBarraModulo11(barra);
-    return barra.substring(0, 4) + String(dv) + barra.substring(4);
+    // Campo livre: carteira(3) + NN(8) + DAC(1) + agência(4) + conta(5) + DAC(1) + zeros(3)
+    const campoLivre = `${c.carteira}${c.nossoNumero}${dacNossoNumero(c)}${c.agencia}${c.conta}${dacAgenciaConta}000`;
+    const barra = `${itau.options.codigo}9${fator}${valorBarras(boleto)}${campoLivre}`;
+    return inserirDv(barra, dvBarraModulo11(barra));
   },
 
   linhaDigitavel(codBarras: string): string {
     return linhaDigitavelPadrao(codBarras);
+  },
+
+  nossoNumeroDv(boleto: BoletoRuntime) {
+    return dacNossoNumero(campos(boleto));
+  },
+
+  nossoNumeroFormatado(boleto: BoletoRuntime): string {
+    const c = campos(boleto);
+    return `${c.carteira}/${c.nossoNumero}-${dacNossoNumero(c)}`;
+  },
+
+  agenciaCodigoBeneficiario(boleto: BoletoRuntime): string {
+    const c = campos(boleto);
+    return `${c.agencia} / ${c.conta}-${mod10(c.agencia + c.conta)}`;
   },
 };

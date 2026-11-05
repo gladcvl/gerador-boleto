@@ -5,7 +5,7 @@
  * de forma independente do código-fonte principal, garantindo
  * que os testes validem o output sem dependência circular.
  *
- * Baseado em: example/validador.js
+ * Baseado em: sample/validador.js
  */
 
 /** Calcula o dígito verificador módulo 10 (usado nos campos da linha digitável) */

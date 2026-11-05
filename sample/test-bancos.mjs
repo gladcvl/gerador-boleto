@@ -1,5 +1,5 @@
 /**
- * Uso: pnpm build && node examples/test-bradesco.mjs
+ * Uso: pnpm build && node sample/test-bradesco.mjs
  */
 import { gerarBoleto } from '../dist/index.js';
 

@@ -2,7 +2,7 @@
   "name": "@box4dev/gerador-boleto",
   "version": "1.0.1",
   "license": "MIT",
-  "description": "Gerador de Boleto no padrão FEBRABAN: Linha Digitável e Código de Barras",
+  "description": "Gerador de Boleto no padrão FEBRABAN: linha digitável, código de barras, PDF e arquivos CNAB 240 de remessa e retorno",
   "keywords": [
     "boleto",
     "febraban",
@@ -12,7 +12,13 @@
     "cobrança",
     "bradesco",
     "caixa",
-    "santander"
+    "santander",
+    "pdf",
+    "cnab",
+    "cnab240",
+    "remessa",
+    "retorno",
+    "itau"
   ],
   "author": "Box4Dev",
   "repository": {
@@ -32,10 +38,36 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./pdf": {
+      "import": {
+        "types": "./dist/pdf.d.ts",
+        "default": "./dist/pdf.js"
+      },
+      "require": {
+        "types": "./dist/pdf.d.cts",
+        "default": "./dist/pdf.cjs"
+      }
+    },
+    "./cnab": {
+      "import": {
+        "types": "./dist/cnab.d.ts",
+        "default": "./dist/cnab.js"
+      },
+      "require": {
+        "types": "./dist/cnab.d.cts",
+        "default": "./dist/cnab.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "sideEffects": false,
   "readme": "README.md",
@@ -59,26 +91,38 @@
     "test:unit": "node --import tsx --test test/unit/**/*.test.ts",
     "test:e2e": "node --import tsx --test test/e2e/**/*.test.ts",
     "test:watch": "node --import tsx --test --watch test/**/*.test.ts",
-    "sample:vazio": "node example/test-vazio.mjs",
-    "sample:bancos": "node example/test-bancos.mjs",
-    "sample:bradesco": "node example/test-bradesco.mjs",
-    "sample:caixa": "node example/test-caixa.mjs",
-    "sample:itau": "node example/test-itau.mjs",
-    "sample:santander": "node example/test-santander.mjs",
-    "sample:stdin": "node example/stdin-json.mjs < example/payload.json"
+    "sample:vazio": "node sample/test-vazio.mjs",
+    "sample:bancos": "node sample/test-bancos.mjs",
+    "sample:bradesco": "node sample/test-bradesco.mjs",
+    "sample:caixa": "node sample/test-caixa.mjs",
+    "sample:itau": "node sample/test-itau.mjs",
+    "sample:santander": "node sample/test-santander.mjs",
+    "sample:stdin": "node sample/stdin-json.mjs < sample/payload.json",
+    "sample:pdf": "node --import tsx sample/pdf.ts",
+    "sample:cnab": "node --import tsx sample/cnab.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
-    "tsup": "^8.5.1",
+    "@types/node": "^22.13.1",
+    "@types/pdfkit": "0.17.7",
+    "pdfkit": "0.20.2",
+    "tsup": "^9.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.7.3",
-    "@types/node": "^22.13.1"
+    "typescript": "^5.7.3"
   },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "^11.1.1",
+      "version": "^11.28.9",
       "onFail": "download"
+    }
+  },
+  "peerDependencies": {
+    "pdfkit": ">=0.15.0"
+  },
+  "peerDependenciesMeta": {
+    "pdfkit": {
+      "optional": true
     }
   }
 }

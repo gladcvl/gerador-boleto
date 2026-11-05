@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { criarBoleto, gerarBoleto, gerarBoletoAleatorio } from '../../src/generator.js';
+import {
+  criarBoleto,
+  gerarBoleto,
+  gerarBoletoAleatorio,
+  montarBoleto,
+} from '../../src/generator.js';
 
 describe('Unit › Generator', () => {
   describe('gerarBoleto (alias para gerarBoletoAleatorio)', () => {
@@ -23,7 +28,11 @@ describe('Unit › Generator', () => {
 
     it('deve escolher um banco aleatório válido se não for fornecido', () => {
       const output = gerarBoleto();
-      assert.ok(['bradesco', 'santander', 'caixa', 'itau'].includes(String(output.banco)));
+      assert.ok(
+        ['bradesco', 'santander', 'caixa', 'itau', 'bb', 'sicredi', 'sicoob', 'safra'].includes(
+          String(output.banco),
+        ),
+      );
     });
 
     it('deve gerar datas válidas quando omitidas', () => {
@@ -42,6 +51,7 @@ describe('Unit › Generator', () => {
         agencia: '1234',
         codigoCedente: '1234567',
         carteira: '25',
+        dataVencimento: '2026-05-17',
       };
       const output = criarBoleto(input);
       assert.equal(output.banco, 'bradesco');
@@ -77,10 +87,21 @@ describe('Unit › Generator', () => {
     });
   });
 
-  describe('criarBoleto branch coverage', () => {
+  describe('criarBoleto (modo estrito)', () => {
+    it('deve exigir banco e campos obrigatórios em vez de preencher', () => {
+      assert.throws(() => criarBoleto({} as any), /banco: é obrigatório/);
+      assert.throws(() => criarBoleto(null as any), /input: deve ser um objeto/);
+      assert.throws(
+        () => criarBoleto({ banco: 'itau', valorDocumento: 100 } as any),
+        /agencia: é obrigatório/,
+      );
+    });
+  });
+
+  describe('montarBoleto branch coverage', () => {
     it('deve usar fallbacks de prepararInput quando chamado diretamente com objeto vazio', () => {
       // Isso testa as branches `?? 0` e fallbacks não alcançados quando vem do gerarBoleto
-      const output = criarBoleto({} as any);
+      const output = montarBoleto({} as any);
       assert.equal(output.banco, 'bradesco');
       assert.equal(output.valorDocumento, 0);
       assert.equal(output.nossoNumero, 0);
@@ -90,7 +111,7 @@ describe('Unit › Generator', () => {
     });
 
     it('deve formatar instrucoesPagamento/localPagamento quando input estiver vazio', () => {
-      const output = criarBoleto({ banco: 'santander' } as any);
+      const output = montarBoleto({ banco: 'santander' } as any);
       assert.ok(String(output.instrucoesPagamento).includes('Sr. Caixa'));
       assert.ok(String(output.localPagamento).includes('Santander'));
     });

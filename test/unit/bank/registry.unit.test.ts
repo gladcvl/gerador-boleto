@@ -5,8 +5,8 @@ import { banks, getBank } from '../../../src/bank/registry.js';
 describe('Unit › Bank › Registry', () => {
   // ─── Testes Positivos ─────────────────────────────────
 
-  it('deve conter exatamente 4 bancos registrados', () => {
-    assert.equal(Object.keys(banks).length, 4);
+  it('deve conter exatamente 8 bancos registrados', () => {
+    assert.equal(Object.keys(banks).length, 8);
   });
 
   it('deve conter bradesco no registro', () => {

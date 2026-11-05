@@ -1,2 +1,6 @@
 allowBuilds:
   esbuild: true
+
+overrides:
+  # GHSA-g7r4-m6w7-qqqr (dev server no Windows) — tsx ainda depende de esbuild ~0.27
+  esbuild: ">=0.28.1"
