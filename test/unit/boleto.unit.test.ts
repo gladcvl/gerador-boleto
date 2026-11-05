@@ -23,8 +23,10 @@ describe('Unit › Boleto', () => {
     assert.ok(boleto.bank); // referência ao módulo do banco
     assert.equal(boleto.codigoBarras.length, 44);
     assert.equal(boleto.linhaDigitavel.length, 54);
-    assert.equal(boleto.nossoNumeroDv, 0); // O DV calculado para esse nossoNúmero é 0
-    assert.equal(typeof boleto.nossoNumeroDv, 'number');
+    // Regra Bradesco: mod11 pesos 2-7 sobre carteira(25) + NN → resto 9 → DV 2
+    assert.equal(boleto.nossoNumeroDv, 2);
+    assert.equal(boleto.nossoNumeroFormatado, '25/12345678901-2');
+    assert.equal(boleto.agenciaCodigoBeneficiario, '1229 / 0000469');
   });
 
   it('deve preservar propriedades customizadas no objeto resultante', () => {

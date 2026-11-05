@@ -53,5 +53,11 @@ export function fatorVencimento(date: Date | string): string {
     factor = (factor % 10000) + 1000;
   }
 
+  if (factor < 1000 || factor > 9999) {
+    throw new Error(
+      `Data de vencimento fora da faixa suportada pelo fator de vencimento FEBRABAN: ${normalizeDate(date).toISOString().slice(0, 10)}`,
+    );
+  }
+
   return zeroPad(factor, 4);
 }

@@ -69,12 +69,12 @@ describe('Unit › Util › utcToday', () => {
     assert.ok(utcToday() instanceof Date);
   });
 
-  it('deve retornar data de hoje (UTC)', () => {
+  it('deve retornar a data de hoje no calendário de Brasília', () => {
     const result = utcToday();
-    const now = new Date();
-    assert.equal(result.getUTCFullYear(), now.getUTCFullYear());
-    assert.equal(result.getUTCMonth(), now.getUTCMonth());
-    assert.equal(result.getUTCDate(), now.getUTCDate());
+    const hojeBrasil = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(
+      new Date(),
+    );
+    assert.equal(result.toISOString().slice(0, 10), hojeBrasil);
   });
 
   it('deve retornar meia-noite UTC', () => {

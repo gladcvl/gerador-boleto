@@ -66,12 +66,11 @@ describe('Unit › Bank › Itaú', () => {
     assert.equal(barras.length, 44);
   });
 
-  it('deve usar strings vazias para campos nulos/undefined', () => {
+  it('deve rejeitar campos obrigatórios ausentes em vez de usar zeros', () => {
     const b = makeBoleto();
     b.agencia = undefined as any;
     b.carteira = undefined as any;
     b.codigoCedente = undefined as any;
-    const result = itau.codBarras(b);
-    assert.equal(result.length, 44);
+    assert.throws(() => itau.codBarras(b), /é obrigatório/);
   });
 });

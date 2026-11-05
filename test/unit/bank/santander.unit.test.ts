@@ -61,11 +61,10 @@ describe('Unit › Bank › Santander', () => {
     assert.match(barras, /^\d{44}$/);
   });
 
-  it('deve usar strings vazias para campos nulos/undefined', () => {
+  it('deve rejeitar campos obrigatórios ausentes em vez de usar zeros', () => {
     const b = makeBoleto();
     b.carteira = undefined as any;
     b.codigoCedente = undefined as any;
-    const result = santander.codBarras(b);
-    assert.equal(result.length, 44);
+    assert.throws(() => santander.codBarras(b), /é obrigatório/);
   });
 });

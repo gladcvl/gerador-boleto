@@ -135,15 +135,36 @@ describe('E2E › Caixa', () => {
       assert.ok(typeof out.dataVencimento === 'string');
     });
 
-    it('deve aceitar nossoNumero com 17 dígitos completo', () => {
+    it('deve aceitar nossoNumero com 17 dígitos completo (carteira + emissão + 15)', () => {
       const out = gerarBoleto({
         ...CAIXA_EXAMPLE.input,
-        nossoNumero: '12345678987654321', // 17 dígitos
+        nossoNumero: '14345678987654321', // 17 dígitos coerentes com a carteira 14
       });
+      const curto = gerarBoleto(CAIXA_EXAMPLE.input); // mesmos 15 dígitos livres
 
-      assert.equal(String(out.codigoBarras).length, 44);
+      assert.equal(out.codigoBarras, curto.codigoBarras);
       const result = validarCodigoBarras(String(out.codigoBarras));
       assert.ok(result.valido);
+    });
+
+    it('deve rejeitar nossoNumero de 17 dígitos incoerente com a carteira', () => {
+      assert.throws(
+        () => gerarBoleto({ ...CAIXA_EXAMPLE.input, nossoNumero: '12345678987654321' }),
+        /carteira\+emissão "14"/,
+      );
+    });
+
+    it('deve tratar carteira "02" como carteira 2 (zero à esquerda)', () => {
+      assert.equal(
+        gerarBoleto({ ...CAIXA_COMPLETO.input, carteira: '02' }).codigoBarras,
+        gerarBoleto({ ...CAIXA_COMPLETO.input, carteira: '2' }).codigoBarras,
+      );
+    });
+
+    it('deve rejeitar carteira fora do SIGCB (ex.: 0, 3, 82, 188)', () => {
+      for (const carteira of ['0', '3', '82', '188']) {
+        assert.throws(() => gerarBoleto({ ...CAIXA_COMPLETO.input, carteira }), /carteira/);
+      }
     });
 
     it('deve produzir boleto válido com massa de dados do segundo fixture', () => {

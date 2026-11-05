@@ -64,9 +64,14 @@ describe('Unit › Bank › Caixa', () => {
     assert.match(barras, /^\d{44}$/);
   });
 
-  it('deve lidar corretamente com nossoNumero >= 17 dígitos (ex: SIGCB longo)', () => {
-    const barras = caixa.codBarras(makeBoleto({ nossoNumero: '12345678901234567' }));
-    assert.equal(barras.length, 44);
+  it('deve aceitar nossoNumero de 17 dígitos coerente com carteira/emissão', () => {
+    const barras = caixa.codBarras(makeBoleto({ nossoNumero: '14222333777777777' }));
+    assert.equal(barras, caixa.codBarras(makeBoleto()));
+  });
+
+  it('deve rejeitar nossoNumero de 16 dígitos ou 17 incoerente', () => {
+    assert.throws(() => caixa.codBarras(makeBoleto({ nossoNumero: '1234567890123456' })), /até 15/);
+    assert.throws(() => caixa.codBarras(makeBoleto({ nossoNumero: '12345678901234567' })), /"14"/);
   });
 
   it('deve aceitar codigo_beneficiario como fallback para codigoCedente', () => {
@@ -78,21 +83,25 @@ describe('Unit › Bank › Caixa', () => {
     assert.equal(barras.length, 44);
   });
 
-  it('deve usar strings vazias/defaults para campos nulos/undefined', () => {
+  it('deve usar carteira 1 e emissão 4 por padrão', () => {
+    const b = makeBoleto();
+    b.carteira = undefined as any;
+    b.identificadorEmissao = undefined as any;
+    assert.equal(caixa.codBarras(b), caixa.codBarras(makeBoleto()));
+  });
+
+  it('deve rejeitar código do beneficiário ausente', () => {
     const b = makeBoleto();
     b.codigoCedente = undefined as any;
     b.codigo_beneficiario = undefined as any;
-    b.carteira = undefined as any;
-    b.identificadorEmissao = undefined as any;
-    const result = caixa.codBarras(b);
-    assert.equal(result.length, 44);
+    assert.throws(() => caixa.codBarras(b), /é obrigatório/);
   });
 
-  it('deve usar fallback 1/4 para carteira/identEmissao com strings vazias apos filter', () => {
-    const b = makeBoleto();
-    b.carteira = 'abc' as any;
-    b.identificadorEmissao = 'xyz' as any;
-    const result = caixa.codBarras(b);
-    assert.equal(result.length, 44);
+  it('deve rejeitar carteira/emissão não numéricas em vez de assumir padrão', () => {
+    assert.throws(() => caixa.codBarras(makeBoleto({ carteira: 'abc' })), /apenas dígitos/);
+    assert.throws(
+      () => caixa.codBarras(makeBoleto({ identificadorEmissao: 'xyz' })),
+      /apenas dígitos/,
+    );
   });
 });

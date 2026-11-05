@@ -41,7 +41,8 @@ export const BRADESCO_MASSA_ESPECIFICA = {
     codigoBanco: '237-2',
     codigoBarras: '23791144900000705771843690052968169872242500',
     linhaDigitavel: '23791.84365 90052.968162 98722.425000 1 14490000070577',
-    nossoNumeroDv: 2,
+    // mod11 pesos 2-7 sobre carteira(69) + NN(00529681698) → resto 6 → DV 5
+    nossoNumeroDv: 5,
   },
 };
 
@@ -151,14 +152,15 @@ export const CAIXA_MASSA_ESPECIFICA = {
     valorDocumento: 70445,
     nossoNumero: 716978190,
     agencia: 1573,
-    codigoCedente: 4849009,
-    carteira: 188,
+    codigoCedente: 484900,
+    carteira: '14',
   },
   expected: {
+    // Calculado de forma independente (script Python do layout SIGCB)
     codigoBanco: '104-0',
-    codigoBarras: '10496144900000704458490090000100047169781904',
-    linhaDigitavel: '10498.49001 90000.100041 71697.819044 6 14490000070445',
-    nossoNumeroDv: 6,
+    codigoBarras: '10492144900000704454849000000100047169781903',
+    linhaDigitavel: '10494.84908 00000.100040 71697.819036 2 14490000070445',
+    nossoNumeroDv: 1,
   },
 };
 
@@ -168,7 +170,7 @@ export const CAIXA_EXAMPLE = {
     dataEmissao: '2026-05-10T00:00:00.000Z',
     dataVencimento: '2026-05-17T00:00:00.000Z',
     valorDocumento: 88800,
-    nossoNumero: '12345678987654321',
+    nossoNumero: '345678987654321',
     agencia: '1234',
     codigoCedente: '654321',
     carteira: '14',
@@ -223,8 +225,8 @@ export const DATA_INVALIDA_STRING = {
 
 export const PAYLOAD_STDIN = {
   banco: 'bradesco' as const,
-  dataEmissao: '05/11/2026',
-  dataVencimento: '05/15/2026',
+  dataEmissao: '11/05/2026',
+  dataVencimento: '15/05/2026',
   valorDocumento: 99900,
   nossoNumero: '12345678901',
   numeroDocumento: '8888888',

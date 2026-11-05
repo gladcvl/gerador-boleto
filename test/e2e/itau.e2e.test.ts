@@ -87,7 +87,7 @@ describe('E2E › Itaú', () => {
       const { localPagamento, instrucoesPagamento, ...inputSemTextos } = ITAU_EXAMPLE.input;
       const out = gerarBoleto(inputSemTextos);
 
-      assert.equal(out.localPagamento, 'Até o vencimento, preferencialmente no Banco Itau');
+      assert.equal(out.localPagamento, 'Até o vencimento, preferencialmente no Banco Itaú');
       assert.equal(
         out.instrucoesPagamento,
         'Sr. Caixa, cobrar multa de 2% após o vencimento. Receber até 10 dias após o vencimento.',

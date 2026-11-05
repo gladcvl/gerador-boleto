@@ -48,11 +48,16 @@ describe('E2E › Edge Cases & Cenários Transversais', () => {
       );
     });
 
+    it('deve normalizar maiúsculas/acentos no nome do banco', () => {
+      assert.equal(gerarBoleto({ banco: 'Bradesco' as BankId }).banco, 'bradesco');
+      assert.equal(gerarBoleto({ banco: ' Itaú ' as BankId }).banco, 'itau');
+    });
+
     it('deve lançar erro para banco com nome similar mas incorreto', () => {
       assert.throws(
         () =>
           gerarBoleto({
-            banco: 'Bradesco' as BankId, // capitalizado
+            banco: 'Bradescoo' as BankId, // grafia errada
             valorDocumento: 1000,
             nossoNumero: '12345',
           }),
@@ -325,7 +330,7 @@ describe('E2E › Edge Cases & Cenários Transversais', () => {
                   valorDocumento: 10000,
                   nossoNumero: '12345678',
                   agencia: '1234',
-                  codigoCedente: '123456',
+                  codigoCedente: banco === 'caixa' ? '123456' : '12345',
                   carteira: banco === 'caixa' ? '1' : '109',
                 };
 
